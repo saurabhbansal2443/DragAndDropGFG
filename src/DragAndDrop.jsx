@@ -1,7 +1,17 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const DragAndDrop = ({ data: intialData }) => {
-  const [data, setData] = useState(intialData);
+  const [data, setData] = useState(() => {
+    const savedData = localStorage.getItem("tasks-data");
+    if (savedData) {
+      return JSON.parse(savedData);
+    }
+    return intialData;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("tasks-data", JSON.stringify(data));
+  }, [data]);
 
   const mainHeadings = Object.keys(data); //["Office_Task","Home_Task","Sunday_Task"]
 
@@ -36,18 +46,34 @@ const DragAndDrop = ({ data: intialData }) => {
     if (!source || !dest) return null;
 
     setData((pre) => {
-      let newSourceList = [...pre[source.heading]];
-      let newDestinationList = [...pre[dest.heading]];
+      // this means we are using drag and drop in same list
+      if (source.heading == dest.heading) {
+        const list = [...pre[source.heading]];
+        const sourceIdx = source.idx;
+        const destinationIdx = dest.idx;
+        const [removedItem] = list.splice(sourceIdx, 1);
+        list.splice(destinationIdx, 0, removedItem);
 
-      const [removedItem] = newSourceList.splice(source.idx, 1);
-      newDestinationList.splice(dest.idx, 0, removedItem);
-
-      return {
-        ...pre,
-        [source.heading]: newSourceList,
-        [dest.heading]: newDestinationList,
-      };
+        return {
+          ...pre,
+          [source.heading]: list,
+        };
+      } else {
+        const sourceList = [...pre[source.heading]];
+        const detinationList = [...pre[dest.heading]];
+        const sourceIdx = source.idx;
+        const destinationIdx = dest.idx;
+        const [removedItem] = sourceList.splice(sourceIdx, 1);
+        detinationList.splice(destinationIdx, 0, removedItem);
+        return {
+          ...pre,
+          [source.heading]: sourceList,
+          [dest.heading]: detinationList,
+        };
+      }
     });
+    dragItem.current = null;
+    dragOverItem.current = null;
   }
 
   return (
